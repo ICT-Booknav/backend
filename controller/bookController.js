@@ -18,30 +18,33 @@ async function getBookCount(bookSize, currentState) {
 // 모든 책 조회 (검색 기능) -> title, genre, description으로 검색 가능
 exports.getAllBooks = async (req, res) => {
     try {
-        const { query = "" } = req.query; // 검색어 처리
+        let { query = [], answer="" } = req.query; // 검색어 처리
         const whereClause = {};
+        if(typeof query === "string"){
+            query = query.split(',');
+        }
+        console.log("query: ", query);
 
         // 검색어가 존재하는 경우 조건 추가
-        if (query) {
-            whereClause[Op.or] = [
-                { title: { [Op.like]: `%${query}%` } },
-                { genre: { [Op.like]: `%${query}%` } },
-                { publishYear: { [Op.like]: `%${query}%` } },
-                { publisher: { [Op.like]: `%${query}%` } },
-            ];
+        if (query.length > 0) {
+            whereClause[Op.or] = query.flatMap(q => [
+                { title: { [Op.like]: `%${q}%` } },
+                { genre: { [Op.like]: `%${q}%` } },
+                { publishYear: { [Op.like]: `%${q}%` } },
+                { publisher: { [Op.like]: `%${q}%` } },
+            ]);
         }
-
+        console.log("whereClause: ", whereClause); 
         // 책 정보를 조회
         const books = await Book.findAll({
             where: whereClause,
-            attributes: ['id', 'title', 'genre', 'publishYear', 'publisher'], // id 포함
+            attributes: ['id', 'title', 'genre', 'publishYear', 'publisher','currentState', 'author', 'bookSize', 'coverimage'], // id 포함
             raw: true
         });
 
         if (!books.length) {
             return res.status(404).json({ message: "검색 조건에 맞는 책이 없습니다." });
         }
-
         // title 기준으로 그룹화 및 location 추가
         const bookMap = new Map();
 
@@ -52,10 +55,13 @@ exports.getAllBooks = async (req, res) => {
                     genre: book.genre, 
                     publishYear: book.publishYear, 
                     publisher: book.publisher, 
-                    locations: [] 
-                });
+                    location: [] ,  // 배열로 초기화 필요
+                    currentState: book.currentState,
+                    bookSize: book.bookSize,
+                    author: book.author,
+                    ocoverImage: `/img/${book.coverImage}`,
+                });                
             }
-
             // 위치 정보 가져오기
             const shelves = await Shelf.findAll({
                 where: { bookId: book.id },
@@ -64,12 +70,19 @@ exports.getAllBooks = async (req, res) => {
             });
 
             const bookData = bookMap.get(book.title);
-            bookData.locations.push(...shelves.map(shelf => shelf.column));
+            if (bookData && Array.isArray(bookData.location)) {
+                bookData.location.push(...shelves.map(shelf => shelf.column));
+            } else {
+                console.error(`Invalid bookData or locations for book title: ${book.title}`);
+            }
+
         }
 
         // Map을 배열로 변환
         const result = Array.from(bookMap.values());
-
+        if(answer){
+            result.push({answer: answer});
+        }
         console.log("getAllBooks: ", result);
         res.json(result);
     } catch (err) {

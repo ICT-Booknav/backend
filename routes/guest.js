@@ -44,7 +44,6 @@ const router = express.Router();
  */
 router.get("/search", bookController.getAllBooks);
 
-    
 // 책 상세 정보 API
 /**
  * @swagger
@@ -93,120 +92,51 @@ router.get("/search", bookController.getAllBooks);
  */
 router.get("/search/:title", bookController.getBookDetail);
 
-
-
-// 책 위치 정보 API (그래픽 표시)
+// 책 사출 API (책 사출)
 /**
  * @swagger
- * /search/{title}/location:
- *   get:
- *     summary: 선택한 책의 위치 정보를 반환합니다.
- *     description: 사용자가 제목을 제공하면 해당 책의 위치 정보를 반환합니다. 위치 정보는 선반의 ID, 행, 열 등의 정보를 포함합니다.
- *     tags:
- *       - Book Management
- *     parameters:
- *       - name: title
- *         in: path
- *         description: 조회할 책의 제목
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: 성공적으로 책 위치 정보를 반환합니다.
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
+ * paths:
+ *   /search/{title}/selectBook/{selectedTitle}:
+ *     post:
+ *       summary: 책 선택 API (책 사출)
+ *       description: 사용자가 지정한 제목(selectedTitle)에 해당하는 책을 선택하고 라즈베리파이로 데이터를 전송하여 책을 사출합니다.
+ *       tags:
+ *         - Book Management
+ *       parameters:
+ *         - name: title
+ *           in: path
+ *           required: true
+ *           description: 검색할 책의 제목
+ *           schema:
+ *             type: string
+ *         - name: selectedTitle
+ *           in: path
+ *           required: true
+ *           description: 선택할 책의 제목
+ *           schema:
+ *             type: string
+ *       responses:
+ *         200:
+ *           description: 책 선택 완료
+ *           content:
+ *             application/json:
+ *               schema:
  *                 type: object
  *                 properties:
- *                   shelfId:
- *                     type: integer
- *                     example: 101
- *                   row:
- *                     type: integer
- *                     example: 3
- *                   column:
- *                     type: integer
- *                     example: 7
- *                   location:
- *                     type: boolean
- *                     example: true
- *       404:
- *         description: 책을 찾을 수 없습니다.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: 책을 찾을 수 없음
- *       500:
- *         description: 서버 오류가 발생했습니다.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: 서버 오류
+ *                   message:
+ *                     type: string
+ *                     example: "책 선택 완료"
+ *         500:
+ *           description: 서버 오류
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   error:
+ *                     type: string
+ *                     example: "서버 오류"
  */
-//router.get("/search/:title/location", bookController.getBookLocation);
+router.post('/search/:title', mcuController.selectBook);
 
-
-// 책 사출 APi (책 사출)
-/**
- * @swagger
- * /search/{title}/selectBook/{selectedTitle}:
- *   post:
- *     summary: 책 선택 API (책 사출)
- *     description: 사용자가 지정한 제목(selectedTitle)에 해당하는 책을 선택하고 라즈베리파이로 데이터를 전송하여 책을 사출합니다.
- *     tags:
- *       - Book Management
- *     parameters:
- *       - name: title
- *         in: path
- *         required: true
- *         description: 검색할 책의 제목
- *         schema:
- *           type: string
- *       - name: selectedTitle
- *         in: path
- *         required: true
- *         description: 선택할 책의 제목
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: 책 선택 완료
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: 책 선택 완료
- *       500:
- *         description: 서버 오류
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: 서버 오류
- */
-router.post('/search/:title/selectBook/:selectedTitle', mcuController.selectBook);
 module.exports = router;
-
-
-
-
-
-// 책 조건별 검색 페이지 API
-//router.get('/search/condition', bookController.getBookById);

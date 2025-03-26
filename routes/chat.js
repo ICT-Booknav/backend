@@ -1,6 +1,8 @@
 const express = require("express");
 const chatController = require("../controller/chatController");
 const mcuController = require("../controller/mcuController");
+const bookController = require("../controller/bookController");
+const book = require("../models/book");
 
 const router = express.Router();
 
@@ -40,13 +42,58 @@ const router = express.Router();
  *                     type: string
  *                     description: LLM의 응답
  *                     example: '책 제목은 자료구조입니다.'
+ *                   recommend:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                     description: LLM의 추천 도서
+ *                     example: ['자료구조', '알고리즘']
  *         400:
  *           description: 잘못된 요청
  *         500:
  *           description: 서버 오류
  */
-router.get("/chat", chatController.askLLM);
+router.post("/chat", chatController.askLLM);
 
+// 책 전체 검색 페이지 API
+/**
+ * @swagger
+ * paths:
+ *   /search:
+ *     get:
+ *       summary: LLM 추천천 책 조회
+ *       description: 데이터베이스에서 모든 책을 조회하거나, 제공된 검색어를 기준으로 제목, 장르, 발행 연도 또는 출판사에 해당하는 결과를 반환합니다.
+ *       tags:
+ *         - 책
+ *       parameters:
+ *         - name: search
+ *           in: query
+ *           description: 책 정보를 검색하기 위한 검색어
+ *           required: false
+ *           schema:
+ *             type: string
+ *             example: "문학"
+ *       responses:
+ *         200:
+ *           description: 책 목록이 성공적으로 반환되었습니다.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: array
+ *                 items:
+ *                   $ref: '#/components/schemas/Book'
+ *         500:
+ *           description: 서버 오류가 발생했습니다.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   error:
+ *                     type: string
+ *                     example: "서버 오류"
+ */
+router.get('/chat/search', bookController.getAllBooks);
 
 // 책 사출 (사용자가 선택한 책 사출)
 /**
@@ -96,5 +143,5 @@ router.get("/chat", chatController.askLLM);
  *                     example: "서버 오류"
  */
 
-router.post("/chat/:title/selectBook/:selectedTitle", mcuController.selectBook);
+router.post("/chat/:title", mcuController.selectBook);
 module.exports = router;
