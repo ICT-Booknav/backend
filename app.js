@@ -47,6 +47,7 @@ app.use(session({
     },
 }));
 app.use(cors());
+app.use("/img", express.static(path.join(__dirname, 'img')));
 
 //정적 파일 제공 코드(not for use)
 //app.use(express.static(path.join(__dirname, 'public')));
