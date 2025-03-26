@@ -4,114 +4,59 @@ const { Op } = require("sequelize");
 const { execFile } = require('child_process'); // 추가
 const { title } = require("process");
 
-// LLM 모델과 통신하는 함수 (가정)
-//ver1 , LLM http 호출
-/*
-async function queryLLM(question, books, id) {
-    //  LLM 호출 (현재는 더미 응답)
-    const llmApiAdress= "http://test.llm.api/query";
-    const requestData = {
-        question: question,
-        books: books.map((book => ({title: book.title, location: book.location}))),
-        id: id,
-    };
-
-    try{
-        const response = await axois.post(llmApiAdress, requestData,{
-            headers: {
-                "Content-Type": "application/json",
-            }
-        });
-        return response.data.answer
-    }
-    catch{
-        console.error('Error querying LLM: ',error);
-        throw new Error("LLM 호출 에러");
-    }
-}
-*/
-//ver2 , 동일 서버에서 LLM program 실행
-async function queryLLM2(question, bookshelf, id) {
-    //const llmScriptPath = 'D:\\CodeStudy\\2025_ICT_Contest\\bookshelfLLM\\main.py'; // LLM 모듈 파일 경로
-    const testPath = '../test.py';
-
-    const requestData = {
-        question: question,
-        books: bookshelf.map((bookshelf => ({title: bookshelf.title, location: bookshelf.location}))),
-    };
-
-    return new Promise((resolve, reject) => {
-        const process = execFile('python', [llmScriptPath, JSON.stringify(requestData)], (error, stdout, stderr) => {
-            if (error) {
-                console.error('Error executing LLM script:', error);
-                return reject(new Error('LLM 호출 중 오류가 발생했습니다.'));
-            }
-            if (stderr) {
-                console.error('LLM script stderr:', stderr);
-                return reject(new Error('LLM 호출 중 오류가 발생했습니다.'));
-            }
-            resolve(stdout.trim());
-        });
-    });
-}
-
 // LLM에게 질문하기
-exports.askLLM = async (req, res) => {
+exports.askLLM = async (req, res, next) => {
     try {
-        //const {type, question} = req.body;
+        /*const { type="1", question} = req.body;
+        for(data in req.body){
+            console.log("req.body : ", JSON.stringify(req.body));
+        }*/
         const type = "1";
-        const question = "IT";
+        const question = "어드벤쳐";
         if (!question) return res.status(400).json({ error: "질문이 필요합니다." });
 
         // 현재 책장에 있는 책 목록
-        const bookshelfData = await Shelf.findAll({ 
+        //임의수정함
+        /*const bookIds = await Shelf.findAll({ 
             where: { bookId: { [Op.ne]: null } },
             attributes: ['bookId'],
             raw:true,
         });
-        console.log("bookshelfData : ",bookshelfData);
-    
+        const bookshelfData = bookIds.map(book => book.bookId);  */
+        const bookshelfData = ["000000000000000001", "000000000000000002", "000000000000000003", "000000000000000004", "000000000000000005", "000000000000000006", "000000000000000007", "000000000000000008", "000000000000000009", "000000000000000010"];
+
         // LLM 호출
-        const response = await queryLLM3(type, question, bookshelfData);
-        console.log("response : ",response);
+        const response = await queryLLM(type, question, bookshelfData);
         if(!response){ 
             return res.status(500).json({ error: "LLM 호출 중 오류가 발생했습니다." });
-        }   
-        //console.log("response : ",response.recommend);
-        res.json({ answer: response.answer, recommend: llmRecommend(response.recommend)});  
-
+        }
+        req.query.answer = response.answer;
+        req.query.query = Object.values(response.booknames);
+        //console.log("query: ", req.query.query);
+        res.json({ answer: response.answer, books: Object.values(response.booknames)});  
+        //next();
     } catch (err) {
         console.log("error : ",err);
         res.status(500).json({ error: "서버 오류" });
     }
 };
-
-
-async function llmRecommend(recommend) {
-    console.log("llmRecommend: ", recommend);
-    const llmRecommendBook = await Promise.all(recommend.map(async (recommendBook) => {
-        const book = await Book.findOne({
-            where: { title: recommendBook },
-            raw: true,
-        });
-        return book;
-    }));
-    console.log('reulst_Information : ', llmRecommendBook);
-    return llmRecommendBook;
+function testLLM(type, keyword, bookshelfData){
+    const parsedOutput =  {
+        answer: "어드벤처를 즐기는 상황에 맞추어, '해리포터'과 '해저2만리'를 추천해드립니다. 이 두 책은 모험과 판타지 요소가 풍부하여 즐거 운 독서 경험을 선사할 것입니다. 즐거운 여정이 되시길 바랍니다!",
+        booknames: { bookname1: '해리포터', bookname2: '해저2만리' }
+      };
+    return parsedOutput;
 }
 
 //bookshelf => title: bookshelf.title, location: bookshelf.location
-function queryLLM3(type, question, bookshelf) {
+function queryLLM(type, question, bookshelfData) {
     const llmScriptPath = 'D:\\CodeStudy\\2025_ICT_Contest\\bookshelfLLM\\communication.py'; // LLM 모듈 파일 경로
-    //테스트 링크
-    //const llmScriptPath = 'd:\\CodeStudy\\2025_ICT_Contest\\SmartShelf_server\\test.py'; // LLM 모듈 파일 경로
     const requestData = {
-        type: type,
+        type: String(type),
         question: question,
-        bookshelf: bookshelf,
-        //bookshelf: bookshelf.map((bookshelf => ({title: bookshelf.title, location: bookshelf.location}))),
+        bookshelfData: bookshelfData//.map(book => book.bookId), // bookshelf를 리스트로 변환
     };
-    console.log("requestData : ",requestData);
+    console.log("requestData : ", requestData);
 
     return new Promise((resolve, reject) => {
         const process = execFile('python', [llmScriptPath, JSON.stringify(requestData)], (error, stdout, stderr) => {
@@ -125,14 +70,14 @@ function queryLLM3(type, question, bookshelf) {
                 return reject(new Error('LLM 호출 중 오류가 발생했습니다(LLM script stderr)'));
             }
             try {
-                console.log("stdout : ",stdout);
+                //console.log("stdout : ", stdout);
                 const parsedOutput = JSON.parse(stdout.trim());
                 resolve(parsedOutput);
             } catch (parseError) {
-                console.error('parseingError:', parseError);
+                console.error('Parsing Error:', parseError);
+                console.error('Raw Output:', stdout);
                 return reject(new Error('LLM 값 파싱 중 오류가 발생했습니다(Error parsing LLM script output).'));
             }
-            resolve(stdout.trim());
         });
     });
 }
