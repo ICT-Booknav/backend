@@ -7,12 +7,12 @@ const { title } = require("process");
 // LLM에게 질문하기
 exports.askLLM = async (req, res, next) => {
     try {
-        /*const { type="1", question} = req.body;
+        const { type="1", question} = req.body;
         for(data in req.body){
             console.log("req.body : ", JSON.stringify(req.body));
-        }*/
-        const type = "1";
-        const question = "어드벤쳐";
+        }
+        // const type = "1";
+        // const question = "어드벤쳐";
         if (!question) return res.status(400).json({ error: "질문이 필요합니다." });
 
         // 현재 책장에 있는 책 목록
@@ -50,7 +50,7 @@ function testLLM(type, keyword, bookshelfData){
 
 //bookshelf => title: bookshelf.title, location: bookshelf.location
 function queryLLM(type, question, bookshelfData) {
-    const llmScriptPath = 'D:\\CodeStudy\\2025_ICT_Contest\\bookshelfLLM\\communication.py'; // LLM 모듈 파일 경로
+    const llmScriptPath = 'C:\\Users\\ekos5\\Side_Project\\ICT-Contest\\LLM-master\\communication.py'; // LLM 모듈 파일 경로
     const requestData = {
         type: String(type),
         question: question,
