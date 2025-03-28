@@ -7,24 +7,18 @@ const { title } = require("process");
 // LLM에게 질문하기
 exports.askLLM = async (req, res, next) => {
     try {
-        /*const { type="1", question} = req.body;
+        const { type="1", question} = req.body;
         for(data in req.body){
             console.log("req.body : ", JSON.stringify(req.body));
-        }*/
-        const type = "1";
-        const question = "어드벤쳐";
+        }
         if (!question) return res.status(400).json({ error: "질문이 필요합니다." });
 
-        // 현재 책장에 있는 책 목록
-        //임의수정함
-        /*const bookIds = await Shelf.findAll({ 
+        const bookIds = await Shelf.findAll({ 
             where: { bookId: { [Op.ne]: null } },
             attributes: ['bookId'],
             raw:true,
         });
-        const bookshelfData = bookIds.map(book => book.bookId);  */
-        const bookshelfData = ["000000000000000001", "000000000000000002", "000000000000000003", "000000000000000004", "000000000000000005", "000000000000000006", "000000000000000007", "000000000000000008", "000000000000000009", "000000000000000010"];
-
+        const bookshelfData = bookIds.map(book => book.bookId);
         // LLM 호출
         const response = await queryLLM(type, question, bookshelfData);
         if(!response){ 
@@ -32,9 +26,7 @@ exports.askLLM = async (req, res, next) => {
         }
         req.query.answer = response.answer;
         req.query.query = Object.values(response.booknames);
-        //console.log("query: ", req.query.query);
-        res.json({ answer: response.answer, books: Object.values(response.booknames)});  
-        //next();
+        res.json({ answer: response.answer, books: Object.values(response.booknames)});
     } catch (err) {
         console.log("error : ",err);
         res.status(500).json({ error: "서버 오류" });
@@ -53,7 +45,7 @@ function queryLLM(type, question, bookshelfData) {
     const llmScriptPath = 'D:\\CodeStudy\\2025_ICT_Contest\\bookshelfLLM\\communication.py'; // LLM 모듈 파일 경로
     const requestData = {
         type: String(type),
-        question: question,
+        keyword: question,
         bookshelfData: bookshelfData//.map(book => book.bookId), // bookshelf를 리스트로 변환
     };
     console.log("requestData : ", requestData);

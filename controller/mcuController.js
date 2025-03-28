@@ -1,40 +1,54 @@
-const Shelf = require("../models/shelf");
-const Book = require("../models/book");
+const { Book, Shelf } = require("../models");
 const axios = require("axios");
 
-
+/*
+    입력 예시 
+    curl -X POST -H "Content-Type: application/json" -d '{"id":1,"row":1,"column":1,"book_id":"0000000000000001"}' http://192.168.137.1:3003/api/mcu/update
+*/
 exports.updateShelf = async (req, res) => {
-    const { id, row, column, book_id } = req.body;
+    const { shelfId, row, column, bookId } = req.body;
+    console.log("recived data: ", shelfId, row, column, bookId);
+
     try {
+        // 책장 정보 조회
         const shelf = await Shelf.findOne({
             where: {
-                shelfId: id,
+                shelfId: shelfId,
                 row: row,
                 column: column,
             },
-            raw: true,
         });
+
         if (!shelf) {
             return res.status(404).json({ message: "책장 정보를 찾을 수 없음" });
         }
+
+        // 이전 책 정보 조회
         const prevBook = shelf.bookId
-            ? await Book.findOne({ where: { id: shelf.bookId }, raw: true })
+            ? await Book.findOne({ where: { id: shelf.bookId } })
+            : null;
+        console.log("prevBook: ", prevBook);
+
+        // 새 책 정보 조회
+        const newBook = bookId
+            ? await Book.findOne({ where: { id: bookId } })
             : null;
 
-        shelf.bookId = bookId || null;
-        await shelf.save();
+        if (bookId && !newBook) {
+            return res.status(404).json({ message: "새 책 정보를 찾을 수 없음" });
+        }
+        console.log("newBook: ", newBook);
 
+        // 책장 정보 업데이트 + 이전 책 정보 삭제
+        await Shelf.update({ bookId: bookId || null }, { where: { id: shelf.id } });
+        await Book.update({ currentState: false, location: null }, { where: { id: shelf.bookId } });
+
+        // 새 책 정보 업데이트
         if (bookId) {
-            // 새 책 정보 업데이트
             await Book.update(
                 { currentState: true, location: shelf.column },
                 { where: { id: bookId } }
             );
-        }
-        
-        if (!bookId && prevBook) {
-            // 이전 책 정보 초기화
-            await prevBook.update({ currentState: false, location: null });
         }
 
         res.status(200).json({ message: "책장 정보 수정 완료" });
@@ -70,23 +84,21 @@ exports.selectBook = async (req, res) => {
         if (!selectShelf) {
             return res.status(404).json({ error: "선반 정보를 찾을 수 없음" });
         }
-        /*
         // Raspberry Pi API에 요청 보내기
-        http://localhost:3003/api/mcu/update
-        const raspiURL = "http://192.168.137.4:5000/api/selectBook";
+        //http://localhost:3003/api/mcu/update
+        const raspiURL = "http://192.168.137.4:5000/api/mcu/selectBook";
         const response = await axios.post(raspiURL, {
             shelfId: selectShelf.shelfid,
             row: selectShelf.row,
             column: selectShelf.column,
-            bookId: selectShelf.bookId,
         });
+        console.log("raspberry pi response: ", response.data);
         response.status =  200;
         if (response.status === 200) {
             return res.status(200).json({ message: "책 선택 완료" });
         } else {
             return res.status(500).json({ error: "Raspberry Pi 서버 오류" });
-        }*/
-        res.status(200).json({ message: "책 선택 완료" });
+        }
     } catch (error) {
         console.error("Error selecting book: ", error);
         return res.status(500).json({ error: "서버 오류" });

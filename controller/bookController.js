@@ -38,7 +38,7 @@ exports.getAllBooks = async (req, res) => {
         // 책 정보를 조회
         const books = await Book.findAll({
             where: whereClause,
-            attributes: ['id', 'title', 'genre', 'publishYear', 'publisher','currentState', 'author', 'bookSize', 'coverimage'], // id 포함
+            attributes: ['id', 'title', 'genre', 'publishYear', 'publisher','currentState', 'author', 'bookSize', 'coverImage'], // id 포함
             raw: true
         });
 
@@ -59,7 +59,7 @@ exports.getAllBooks = async (req, res) => {
                     currentState: book.currentState,
                     bookSize: book.bookSize,
                     author: book.author,
-                    ocoverImage: `/img/${book.coverImage}`,
+                    coverImage: `img/${book.coverImage}`,
                 });                
             }
             // 위치 정보 가져오기
