@@ -59,7 +59,7 @@ exports.getAllBooks = async (req, res) => {
                     currentState: book.currentState,
                     bookSize: book.bookSize,
                     author: book.author,
-                    coverImage: `img/${book.coverImage}`,
+                    coverImage: `${book.coverImage}`,
                 });                
             }
             // 위치 정보 가져오기
