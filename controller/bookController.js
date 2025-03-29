@@ -196,7 +196,6 @@ exports.getBookDetail = async (req, res) => {
         console.log("shelvesLocation: ",shelvesLocation);
 
         book.location = shelvesLocation;
-        book.currentState = true;
         console.log("getBookDetail: ", book);
         res.json(book);
     }

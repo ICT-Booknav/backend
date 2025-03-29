@@ -30,21 +30,22 @@ exports.updateShelf = async (req, res) => {
         console.log("prevBook: ", prevBook);
 
         // 새 책 정보 조회
-        const newBook = bookId
+        const newBook = bookId && bookId !== "0000000000000000"
             ? await Book.findOne({ where: { id: bookId } })
             : null;
 
-        if (bookId && !newBook) {
+        if (bookId && bookId !== "0000000000000000" && !newBook) {
             return res.status(404).json({ message: "새 책 정보를 찾을 수 없음" });
         }
         console.log("newBook: ", newBook);
 
         // 책장 정보 업데이트 + 이전 책 정보 삭제
-        await Shelf.update({ bookId: bookId || null }, { where: { id: shelf.id } });
         await Book.update({ currentState: false, location: null }, { where: { id: shelf.bookId } });
+        await Shelf.update({ bookId: bookId === "0000000000000000" ? null : bookId }, { where: { id: shelf.id } });
+
 
         // 새 책 정보 업데이트
-        if (bookId) {
+        if (bookId && bookId !== "0000000000000000") {
             await Book.update(
                 { currentState: true, location: shelf.column },
                 { where: { id: bookId } }
